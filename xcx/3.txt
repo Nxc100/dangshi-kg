@@ -1,0 +1,59 @@
+使用Camoufox
+
+camoufox相关资料文档：
+https://camoufox.com/
+https://camoufox.com/stealth/
+https://camoufox.com/features/
+https://camoufox.com/python/
+https://camoufox.com/python/installation/
+https://camoufox.com/python/usage/
+https://camoufox.com/python/geoip/
+https://camoufox.com/python/browserforge/
+https://camoufox.com/fingerprint/navigator/
+https://camoufox.com/fingerprint/cursor-movement/
+https://camoufox.com/fingerprint/fonts/
+https://camoufox.com/fingerprint/screen/
+https://camoufox.com/fingerprint/window/
+https://camoufox.com/fingerprint/document/
+https://camoufox.com/fingerprint/webgl/
+https://camoufox.com/fingerprint/geolocation/
+https://camoufox.com/fingerprint/headers/
+https://camoufox.com/fingerprint/webrtc/
+https://camoufox.com/development/overview/
+https://camoufox.com/development/buildcli/
+https://brightdata.com/blog/web-data/web-scraping-with-camoufox
+https://github.com/daijro/camoufox
+https://www.scrapingbee.com/blog/how-to-scrape-with-camoufox-to-bypass-antibot-technology/
+https://roundproxies.com/blog/camoufox/
+
+
+
+具体自动化步骤：
+1、打开pokemoncenter登录页面。
+https://www.pokemoncenter-online.com/login/
+
+2、在邮箱输入框输入邮箱账号
+
+输入框xpath：/html/body/div[2]/main/div[2]/div[2]/div[1]/form/dl/dd[1]/input
+输入框选择器：#login-form-email
+输入框元素：<dd class="form-group required">
+                            <input type="email" id="login-form-email" class="form-control" placeholder="メールアドレス" name="email" data-missing-error="メールアドレスは必須項目です。" value="" pattern="^((?=.{1,254}$)(?=(.{1,64}@.{1,253}))(?!.*\.+@.{1,253})(?!.*[.]{2,}))([!#$%&amp;'*+\-\/=?^_`\{\|\}~a-zA-Z0-9]{1,64}(\.[!#$%&amp;'*+\-\/=?^_`\{\|\}~a-zA-Z0-9]{0,}){0,})@((\[(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}\])|([a-zA-Z0-9\-]{1,63}(\.[a-zA-Z0-9\-]{1,63}){1,}))$" autocomplete="email" required="" aria-required="true" _mstplaceholder="11374142">
+                            <span class="invalid-feedback comError" id="form-email-error"></span>
+                            </dd>
+
+3、输入账号密码：
+密码输入框xpath:/html/body/div[2]/main/div[2]/div[2]/div[1]/form/dl/dd[2]/div
+密码输入框选择器：#login-form > dl > dd:nth-child(4) > div
+密码输入框元素：<div class="passwordWrapper">
+                                    <input id="current-password" class="form-control" type="password" name="password" value="" placeholder="半角英数記号混合8文字以上" minlength="8" data-missing-error="パスワードは必須項目です。" autocomplete="current-password" required="" aria-required="true" _mstplaceholder="50234041">
+                                    <i class="js-togglePwShow togglePassword"></i>
+                                </div>
+4、点击登录按钮
+
+登录按钮xpath:/html/body/div[2]/main/div[2]/div[2]/div[1]/form/ul/li[1]/button
+登录按钮选择器：#form1Button
+登录按钮元素：<button type="submit" id="form1Button" class="btn btn-block btn-primary">ログイン</button>
+
+
+5、
+

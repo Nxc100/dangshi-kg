@@ -1,0 +1,88 @@
+
+深度分析以下开题报告的内容，结合开题报告中“社区志愿服务管理”系统的相关信息，按照系统角色列出角色对应的功能，要求具体到操作层面（例如头像图片上传操作）。要求功能贴合系统的要求，在保证功能完善的情况下，保证实现可行性高，可以快速开发。所有功能都能形成正确完善的闭环。
+注意本项目只是毕业设计项目，不需要接入真实的服务和生产环境。给出“社区志愿服务管理功能需求文档.md”文件。
+
+
+深度分析doc\社区志愿服务管理功能需求文档.md的全部功能，和doc\社区志愿服务管理平台_开发规范文档.md的约束规范，针对完成“社区志愿服务管理平台”的doc\社区志愿服务管理功能需求文档.md中的所有功能，创建“社区志愿服务管理平台”的前后端项目。
+只需创建项目和进行启动空白项目测试即可。
+
+
+
+仔细逐个分析doc\社区志愿服务管理功能需求文档.md中全部功能需求完成这个基于Vue + Element UI / Node.js + Express / MySQL的社区志愿服务管理平台（毕业设计）项目。
+，完成该系统mysql数据库设计任务，
+要求在尽量让表的数量保持较少数量情况下，设计能全部实现和完善以下全部功能需求的数据表和能进行全部功能测试的初始数据，给出sql文件，商品图片和用户头像先使用示例图片：测试图片.jpg。（数据库存入相对路径即可）
+
+
+这个是一个基于 基于Vue + Element UI / Node.js + Express / MySQL的社区志愿服务管理平台（毕业设计）项目。
+请全面逐个仔细分析项目前端目录和后端目录下的所有代码文件内容和目录文件结构。全面分析项目，全面熟悉项目。
+特别注意：仔细分析doc\社区志愿服务管理平台_开发规范文档.md，必须严格遵守文件中的开发规则。注意完成功能后对应在doc\社区志愿服务管理功能需求文档.md对应内容标记已完成(加上对应图标)。
+
+在全面分析项目，全面熟悉项目和分析遵守doc\社区志愿服务管理平台_开发规范文档.md的规则情况下，提供中文回复。结合已经存在的项目代码和先仔细分析sql\community_volunteer_service.sql文件数据库信息和doc\社区志愿服务管理功能需求文档.md。完成doc\社区志愿服务管理功能需求文档.md中以下功能存在的问题。
+1、管理员"添加公告“功能http://localhost:5173/#/admin/announcements出现”request entity too large“
+日志：
+
+admin.js:128 
+ POST http://localhost:3000/api/admin/announcements 413 (Payload Too Large)
+AnnouncementManage.vue:262 Uncaught (in promise) AxiosError: Request failed with status code 413
+admin.js:128 
+ POST http://localhost:3000/api/admin/announcements 413 (Payload Too Large)
+AnnouncementManage.vue:262 Uncaught (in promise) AxiosError: Request failed with status code 413
+项目需求文档：doc\社区志愿服务管理功能需求文档.md
+后端代码目录：server
+前端代码目录：frontend
+数据库目录：sql\community_volunteer_service.sql
+数据库：mysql
+用户：root
+密码：123456
+
+
+
+
+ 启动步骤如下。
+
+  首次安装依赖
+  在项目根目录 D:\xc\project12\community-volunteer-service-management 执行：
+
+  npm install
+  npm --prefix frontend install
+  npm --prefix server install
+
+  一键同时启动前后端
+  在根目录执行：
+
+  npm run dev
+
+  启动后访问：
+
+  - 前端：http://127.0.0.1:5173
+  - 后端健康检查：http://127.0.0.1:3000/api/health
+
+  分别启动
+  如果你想分开开两个终端：
+
+  终端 1：
+
+  cd D:\xc\project12\community-volunteer-service-management\server
+  npm run dev
+
+  终端 2：
+
+  cd D:\xc\project12\community-volunteer-service-management\frontend
+  npm run dev
+
+  仅做空白项目验证
+  在根目录执行：
+
+  npm run test:blank
+
+  这会做：
+
+  - 前端构建
+  - 后端冒烟启动测试
+
+  停止项目
+  如果是前台启动，直接在对应终端按：
+
+  Ctrl + C
+
+  如果你要，我也可以下一步把这些步骤补进 README.md。
