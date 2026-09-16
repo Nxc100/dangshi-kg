@@ -8,7 +8,7 @@ DR-14 自动关系构建（V3 3.4 第 1 步「规则自动抽取」的关系侧�
 且两端实体名（或其别名）在名录中完整匹配，才产出一条候选关系。
 
 抽取七类；BELONGS_TO 由导入脚本按 time_sort 自动归属，REORGANIZED_TO 语义过强留人工：
-  OCCURRED_IN     事件 → 地点    「在<地点>召开 / 举行 / 爆发 …」
+  OCCURRED_IN     事件 → 地点    「在<地点>召开 / 举行 / 签署 / 逝世 …」，另认「在京…」简写
   FOUNDED         事件 → 组织    「成立 / 建立 / 组建 <组织>」
   LED             人物/组织 → 事件  事件名以「<人物|组织>领导 / 指挥 / 发动 …」开头
   AUTHORED        人物 → 文献    「<人物>… 发表 / 撰写 / 起草 …《<文献>》」
@@ -37,7 +37,11 @@ ENTITY_CSV = os.path.join(_ROOT, "data", "clean", "entities_auto.csv")
 OUT_CSV = os.path.join(_ROOT, "data", "clean", "relations_auto.csv")
 FIELDS = ["head", "head_type", "rel", "tail", "tail_type", "position", "time_text", "source"]
 
-OCCUR_VERB = r"(?:召开|举行|成立|爆发|开幕|闭幕|签订|发生|建成|落成|通车|开工|胜利|会师|登陆)"
+# 「发生于」的触发动词。凡是能说明「这件事在该地做的」的谓语都算，
+# 首轮只列了开会类，实测漏掉签署、逝世、考察、发射一类，补齐后覆盖显著提升
+OCCUR_VERB = (r"(?:召开|举行|成立|爆发|开幕|闭幕|签订|签署|草签|发生|建成|落成|通车|开工|竣工"
+              r"|胜利|会师|登陆|发表|逝世|去世|病逝|牺牲|就义|考察|视察|接见|会见|奠基"
+              r"|投产|发射|下水|开播|通水|截流|开学|创刊|开通|运营|试飞|阅兵)")
 FOUND_VERB = r"(?:宣告成立|正式成立|成立|建立|组建|设立|创建|创办)"
 # 「领导」后跟机构 / 抽象名词时是定语而非谓语（「空军领导机构成立」），须排除
 LED_VERB = r"(?:领导|指挥|发动|率领|发起|主持)(?!机构|机关|班子|干部|人员|集体|核心|作用|体制|地位|方式|水平|下)"
@@ -126,6 +130,8 @@ def build_rules(matcher):
     """编译七条抽取规则，返回 {关系名: 已编译正则}（缺名录的规则为 None）。"""
     return {
         "OCCURRED_IN": matcher.rule(r"在{loc}%s{{0,%d}}?%s" % (CLAUSE, GAP, OCCUR_VERB), loc="Location"),
+        # 「在京举行」是编年条目的高频简写，单列一条规则映射到北京（不进词典，以免「京汉铁路」被误链）
+        "OCCURRED_IN_JING": re.compile(r"在京%s{0,%d}?%s" % (CLAUSE, GAP, OCCUR_VERB)),
         # 「建立中国共产党领导的统一战线」里的组织名是定语中心语之外的修饰语，排除
         "FOUNDED": matcher.rule(r"%s(?:了)?{org}(?!的|领导|所属|系统)" % FOUND_VERB,
                                 org="Organization"),
@@ -184,6 +190,8 @@ def _event_side(name, first, rules, matcher, out, entry):
         if rules[rel]:
             for match in rules[rel].finditer(first):
                 out.add(name, "Event", rel, matcher.main_name(label, match.group(1)), label, "", entry)
+    if rules["OCCURRED_IN_JING"] and rules["OCCURRED_IN_JING"].search(first):
+        out.add(name, "Event", "OCCURRED_IN", "北京", "Location", "", entry)
     for key, head_type, label in (("LED_PERSON", "Person", "Person"),
                                   ("LED_ORG", "Organization", "Organization")):
         match = rules[key].match(name) if rules[key] else None
