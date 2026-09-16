@@ -1,7 +1,7 @@
 # 基于知识图谱的党史学习智能问答系统
 
 限定领域模板式 KBQA：Neo4j 知识图谱 + jieba 规则问答管道 + Flask 接口 + Vue 3 前端。
-需求与规范以 `doc/` 下四份文档为唯一来源（FRS V1.0 / 实施方案 V3 / LLM 接入方案 / 开发规范）。
+需求与规范以 `doc/` 下四份文档为唯一来源（FRS V1.1 / 实施方案 V3 / LLM 接入方案 / 开发规范）。
 
 ## 目录
 
@@ -11,64 +11,105 @@
 | `qa/` | 问答引擎八步管道（独立包，`python -m qa.cli` 命令行版） |
 | `llm/` | AI 增强模块（可整体删除，`qa/` 以 try-import 引用） |
 | `kg/` | 采集 `crawler/`、清洗抽取 `extract/`、导入 `importer/`（`schema.cypher` 为约束索引唯一来源） |
-| `data/` | `raw/`（不入 Git）、`clean/`、`excel/`、`corpus/`、`sources.md` |
-| `eval/` | 评测集与实验脚本 |
+| `db/` | 种子与核心池数据 `seed_data/`、四层合并 `merge_sources.py`、Excel 生成 `build_seed.py`、一键初始化 `init_all.py` |
+| `data/` | `excel/`（**图谱初始化数据，随仓库提交**）、`clean/`、`corpus/`、`sources.md`；`raw/` 为原始网页留档，不入 Git |
+| `eval/` | 功能验收、数据核查、两个实验数据集与实验脚本 |
 | `frontend/` | Vue 3 + Vite + Element Plus + ECharts 工程 |
 
-## 启动
+---
+
+## 在一台新机器上跑起来
+
+**前置软件：** Python 3.12、Node.js 18+、Neo4j Desktop（本地 DBMS，Bolt 端口 7687）。
 
 ```powershell
-# 0. 依赖（首次）
+# 1. 取代码并建虚拟环境（venv/ 不入 Git，必须本地建）
+git clone <仓库地址> dangshi-kg
+cd dangshi-kg
+python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-cd frontend; npm install; cd ..
 
-# 1. 后端（http://127.0.0.1:5000）——SQLite 已建表，直接启动
-python -m backend.app
+# 2. 配置（.env 含密码，不入 Git，必须本地建）
+copy backend\.env.example backend\.env
+#    编辑 backend\.env，至少填两项：
+#      NEO4J_PASSWORD=<Neo4j Desktop 里该 DBMS 的密码>
+#      ADMIN_INIT_PASSWORD=<初始管理员口令，留空则建库时生成随机密码并打印一次>
 
-# 2. 前端（http://localhost:5173）
-cd frontend; npm run dev
+# 3. 启动 Neo4j Desktop 的本地 DBMS，确认 bolt://127.0.0.1:7687 已监听
 
-# 命令行问答（中期检查材料，与 POST /api/qa 共用 qa.pipeline.answer）
-python -m qa.cli
-python -m qa.cli "遵义会议在哪里召开"      # 非交互单次提问
+# 4. 一键初始化：建 SQLite → 建约束索引 → 导入图谱 → 数据验收核对
+python -m db.init_all
 
-# 本体常量变更后重新生成前端镜像文件（不得手改 frontend/src/utils/ontology.js）
-python -m backend.common.export_ontology
+# 5. 起服务
+python -m backend.app                    # 后端 http://127.0.0.1:5000
+cd frontend; npm install; npm run dev    # 前端 http://localhost:5173
 ```
 
-### 自检脚本（合并代码前跑一遍，对应开发规范第 3 节回归清单）
+第 4 步的图谱数据来自随仓库提交的 `data/excel/` 七张表 + `alias.xlsx`，**不需要联网重新采集**；
+跑完会打印 V3 3.7 的七项验收结果，全部「达标」即初始化成功。
+
+固定端口：Neo4j 7474/7687、Flask 5000（`FLASK_PORT` 可改）、Vite 5173（被占用时自动顺延）。
+
+### 没连 Neo4j 时会怎样
+
+系统仍可启动：首页与时间轴降级为空态与七个时期页签，问答走 F9 兜底分支，账号与后台
+用户/日志功能不受影响；实体百科、图谱可视化、测验返回「图数据库未连接」。
+
+### 初始账号
+
+管理员 `admin`，密码取 `backend/.env` 的 `ADMIN_INIT_PASSWORD`，`must_change_pwd=1`，
+首次登录只能进「账号安全」页改密，改密后方可使用后台。
+重建账号：删除 `backend/app.db` 后 `python -m backend.init_db`。
+
+---
+
+## 日常命令
 
 ```powershell
-python -m eval.selfcheck_qa    # 离线：15 类意图 / 实体链接三级降级 / 槽位澄清 / 注入防护 / 答案模板
-python -m eval.selfcheck_api   # 在线：需先启动后端；鉴权三档、问答边界、账号闭环、本体约束、导出编码
+python -m qa.cli                          # 命令行问答（与 POST /api/qa 共用 qa.pipeline.answer）
+python -m qa.cli "遵义会议在哪里召开"       # 非交互单次提问
+python -m backend.common.export_ontology  # 本体常量变更后重生成前端镜像（不得手改 ontology.js）
 ```
 
-`selfcheck_api` 的管理员断言需要空白库才能完整验证首登强制改密，可先删除 `backend/app.db`
-再执行 `python -m backend.init_db`。图谱相关断言在 Neo4j 未连接时自动计入 SKIP，不判为失败。
-
-固定端口：Neo4j 7474/7687、Flask 5000、Vite 5173（5173 被占用时 Vite 自动顺延）。
-
-### 账号
-
-初始管理员 `admin`，密码取 `backend/.env` 的 `ADMIN_INIT_PASSWORD`，`must_change_pwd=1`，
-首次登录只能进入"账号安全"页改密，改密后方可使用后台。重建账号：删除 `backend/app.db` 后
-`python -m backend.init_db`（未配置 `ADMIN_INIT_PASSWORD` 时生成随机密码并在终端打印一次）。
-
-### 接入 Neo4j（图谱相关功能的前置条件）
-
-未连接 Neo4j 时系统可正常启动：首页、时间轴降级为空态与七个时期页签，问答走 F9 兜底分支，
-账号 / 后台用户与日志功能不受影响；实体百科、图谱可视化、测验返回"图数据库未连接"。
+### 数据链路（改了数据才需要重跑）
 
 ```powershell
-# 1) Neo4j Desktop 启动本地 DBMS，把密码填入 backend/.env 的 NEO4J_PASSWORD
-# 2) 建约束与索引（Neo4j Browser 中执行 kg/importer/schema.cypher，或随导入脚本自动执行）
-python -m kg.importer.test_neo4j                 # 连通自检：写 5 节点 2 关系再查询并清理
-python -m kg.importer.import_all --schema        # 建约束索引 + 导入 data/excel/ 七张表（幂等可重跑）
-python -m kg.importer.verify                     # 对照 V3 3.7 / 5.3 验收线核对计数与溯源覆盖
+python -m db.build_seed                       # db/seed_data → data/excel 七表（按本体逐条校验）
+python -m eval.core_check --emit              # V3 3.6 交叉复核；--emit 生成待补源名单
+python -m db.build_seed                       # 据名单把无原文佐证的条目降为 checked=0
+python -m kg.importer.import_all --prune      # 导入并使图谱与 Excel 完全一致
+python -m kg.importer.verify                  # V3 3.7 七项指标核对
 ```
 
-### AI 增强模块（可选，P1）
+重新采集与抽取（需联网，原始留档会重建到 `data/raw/`）：
+
+```powershell
+python -m kg.crawler.ttd_crawler              # DR-12 天天读，366 个日页，间隔 ≥2 秒
+python -m kg.extract.parse_ttd                # 解析编年条目
+python -m kg.extract.build_corpus             # F9 语料
+python -m kg.extract.build_entities           # DR-13 自动实体
+python -m kg.extract.build_relations          # DR-14 自动关系
+```
+
+### 验收与实验
+
+```powershell
+python -m eval.selfcheck_qa           # 离线：15 类意图 / 实体链接三级降级 / 槽位澄清 / 注入防护
+python -m eval.selfcheck_api          # 在线：需先启动后端；鉴权三档、问答边界、账号闭环
+python -m eval.selfcheck_frs          # FRS 第四章 22 条功能需求 + 第五章 12 条闭环
+python -m eval.data_capability        # 数据对功能的支撑度：15 类意图 / 6 个题型各有多少数据
+python -m eval.intent_experiment      # 意图分类对比实验（规则 / 朴素贝叶斯 / 线性 SVM）
+python -m eval.run_qa200              # 200 条端到端评测
+python -m eval.extraction_accuracy    # 自动抽取准确率抽样评估
+```
+
+`selfcheck_api` 与 `selfcheck_frs` 的管理员断言需要空白库才能完整验证首登强制改密：
+先删 `backend/app.db` 再 `python -m backend.init_db`，否则该条计入 SKIP。
+
+---
+
+## AI 增强模块（可选，P1）
 
 `backend/.env` 配置 `LLM_ENABLED / LLM_BASE_URL / LLM_API_KEY / LLM_MODEL / LLM_TIMEOUT` 后，
 `GET /api/config` 返回 `llm_available=true`，问答页右上角才出现开关。未配置时界面与原方案一致。
