@@ -145,19 +145,44 @@ def from_events(min_len):
 # 天天读栏目每页固定的栏目说明，非史实正文
 TTD_INTRO = "中国共产党的历史波澜壮阔"
 TTD_FOOT = re.compile(r"^【党史百年")
+TTD_CSV = os.path.join(_ROOT, "data", "clean", "ttd_raw.csv")
+# 「党史回眸」板块的年份与正文分处两个 div，页面上的正文块因此不带年份
+TTD_DATE_HEAD = re.compile(r"^\d{1,2}月\d{1,2}日[^\s]{0,8}[　\s]*")
+
+
+def _ttd_entries():
+    """
+    已解析的天天读条目（DR-12），每条带完整年月日，作为该源的语料主体。
+
+    直接复用 parse_ttd 的产物而非再解析一遍 HTML：那里已按板块把年份与正文配好对，
+    页面上的正文块本身不带年份，两路各取一份会让同一史实在语料里出现两遍。
+    """
+    if not os.path.exists(TTD_CSV):
+        return [], set()
+    rows, bodies = [], set()
+    with open(TTD_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        for item in csv.DictReader(f):
+            body = item["条目正文"].strip()
+            bodies.add(body)
+            rows.append({
+                "text": "%s年%s %s" % (item["年份"], item["日期原文"], body),
+                "chapter": "《党史百年·天天读》· %s·%s" % (item["日期原文"], item["板块"]),
+                "source": item["来源URL"],
+            })
+    return rows, bodies
 
 
 def from_ttd(min_len):
     """
-    DR-12「党史百年·天天读」正文段落。
+    DR-12「党史百年·天天读」语料 = 已解析条目 + 页面上未被条目覆盖的正文段。
 
-    该栏目正文承载于**裸 `<div>`**（外层是 mCSB 滚动容器）而非 `<p>`，
-    故取不再嵌套 div 的叶子节点；栏目说明与编辑署名行按固定特征剔除。
+    该栏目正文承载于**裸 `<div>`**（外层是 mCSB 滚动容器）而非 `<p>`，故取不再嵌套
+    div 的叶子节点；其中已进入条目的段落跳过，只补收条目之外的续段与图注说明。
     """
+    rows, bodies = _ttd_entries()
     raw_dir = os.path.join(_ROOT, "data", "raw", "ttd")
     if not os.path.isdir(raw_dir):
-        return []
-    rows = []
+        return [row for row in rows if len(row["text"]) >= min_len]
     for filename in sorted(os.listdir(raw_dir)):
         if not filename.endswith(".html"):
             continue
@@ -174,12 +199,12 @@ def from_ttd(min_len):
             text = clean_text(node.get_text(" ", strip=True))
             if len(text) < min_len or NOISE.search(text) or TTD_FOOT.match(text):
                 continue
-            if text.startswith(TTD_INTRO):
+            if text.startswith(TTD_INTRO) or TTD_DATE_HEAD.sub("", text) in bodies:
                 continue
             rows.append({"text": text,
                          "chapter": "《党史百年·天天读》· %s" % day,
                          "source": "中共中央党史和文献研究院·党史百年·天天读"})
-    return rows
+    return [row for row in rows if len(row["text"]) >= min_len]
 
 
 def dedup(rows):
