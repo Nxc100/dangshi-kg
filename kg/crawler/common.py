@@ -12,6 +12,7 @@
 import hashlib
 import logging
 import os
+import re
 import time
 from urllib.parse import urlparse
 
@@ -41,9 +42,30 @@ def _sleep_gap():
     _last_request_at = time.time()
 
 
+_META_CHARSET = re.compile(rb'charset\s*=\s*["\']?\s*([\w-]+)', re.I)
+_GB_FAMILY = ("gb2312", "gbk", "gb18030")
+
+
 def encoding_for(url, default="utf-8"):
+    """按域名猜编码。仅作兜底：同一站点可能混用编码，优先用 detect_encoding 读页面声明。"""
     host = (urlparse(url).hostname or "").lower()
     return "gbk" if any(host.endswith(h) for h in GBK_HOSTS) else default
+
+
+def detect_encoding(content, url, default=None):
+    """
+    以页面 meta charset 为准判定编码，域名规则兜底（DR-06 实测依据）。
+
+    人民网系并非一律 GBK：文章页 /n1/… 声明 gb2312，而部分 /GB/… 目录页声明 utf-8，
+    按域名硬套 GBK 会把后者解成乱码。gb2312 一律按 gbk 解，以兼容其中的繁体与生僻字。
+    """
+    meta = _META_CHARSET.search(content[:3000])
+    declared = meta.group(1).decode("latin-1").lower() if meta else ""
+    if declared in _GB_FAMILY:
+        return "gbk"
+    if declared and declared != "iso-8859-1":
+        return declared
+    return default or encoding_for(url)
 
 
 def raw_path(url, subdir=""):
@@ -80,8 +102,8 @@ def fetch(url, subdir="", encoding=None, force=False):
 
     _sleep_gap()
     resp = requests.get(url, headers={"User-Agent": UA}, timeout=TIMEOUT)
-    resp.encoding = encoding or encoding_for(url)
-    html = resp.text
+    # 以页面声明的 charset 为准，域名规则兜底；调用方可用 encoding 参数强制指定
+    html = resp.content.decode(encoding or detect_encoding(resp.content, url), "replace")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     mark_done(url)
