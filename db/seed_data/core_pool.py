@@ -16,7 +16,7 @@
 
 校验：eval/core_check.py 对全部 checked=1 实体做机械交叉复核（V3 3.6 交叉复核环节）。
 """
-from db.seed_data.core_meetings import CORE_MEETINGS, MEETING_PLACES
+from db.seed_data.core_meetings import CORE_MEETINGS, MEETING_MEANING, MEETING_PLACES
 from db.seed_data.core_persons import CORE_PERSONS
 from db.seed_data.core_refs import CORE_DOCUMENTS, CORE_LOCATIONS, CORE_ORGANIZATIONS
 
@@ -54,6 +54,8 @@ def rows_of(label):
         for key in ("birth_year", "death_year"):
             if not row.get(key):
                 row.pop(key, None)
+        if label == "Meeting" and row["name"] in MEETING_MEANING:
+            row["meaning"] = MEETING_MEANING[row["name"]]
         row["source"] = CORE_SOURCE
         row["checked"] = 1
         out.append(row)

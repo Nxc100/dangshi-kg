@@ -5,7 +5,7 @@
 合并顺序即优先级，**先登记者占用该主名**，后来者整行跳过：
   1. db/seed_data/entities.py      —— 打通链路的种子数据，checked=1；
   2. db/seed_data/from_extraction.py —— DR-11 抽取后人工确认的历次党代会等，checked=1；
-  3. db/seed_data/core_*.py        —— V3 3.6 核心实体池，checked=1；
+  3. db/seed_data/core_*.py        —— V3 3.6 核心实体池与人工整理的核心关系，checked=1；
   4. data/clean/entities_auto.csv  —— DR-13 自动实体，checked=0，
      其中主名出现在 core_promote.PROMOTE 中的提升为 checked=1。
 
@@ -126,8 +126,13 @@ def core_layer(registry):
         for row in C.rows_of(label):
             row.pop("place", None)  # place 只用于派生 HELD_IN，不是本体属性
             registry.add(label, row)
-    return [_relation(head, head_type, rel, tail, tail_type, source=C.CORE_SOURCE)
+    from db.seed_data import core_relations as CR
+
+    rows = [_relation(head, head_type, rel, tail, tail_type, source=C.CORE_SOURCE)
             for head, head_type, rel, tail, tail_type, _, _ in C.held_in_relations()]
+    rows += [_relation(head, head_type, rel, tail, tail_type, position, time_text, C.CORE_SOURCE)
+             for head, head_type, rel, tail, tail_type, position, time_text in CR.all_relations()]
+    return rows
 
 
 def auto_layer(registry):
