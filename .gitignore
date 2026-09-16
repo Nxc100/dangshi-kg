@@ -1,0 +1,35 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 数据与数据库（不入 Git）
+data/raw/*
+!data/raw/.gitkeep
+*.db
+*.db-journal
+
+# 后端私密配置与上传文件
+backend/.env
+backend/static/avatars/*.jpg
+backend/static/avatars/*.jpeg
+backend/static/avatars/*.png
+!backend/static/avatars/.gitkeep
+
+# 前端
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+
+# 生成文件（由脚本生成，不手改；词典由 Neo4j 数据生成）
+qa/resources/userdict.txt
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
