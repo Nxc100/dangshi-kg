@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-DR-06 数据源入口复核（FRS 3.2）：逐一访问 DR-01~DR-05 的入口，记录
+DR-06 数据源入口复核（FRS 3.2）：逐一访问 DR-01~DR-05 与 DR-12 的入口，记录
 「URL、可达性、编码、页面结构备注」，样页留档 data/raw/，结果回填 data/sources.md。
 
 用法（项目根目录）：python -m kg.crawler.check_sources [--no-archive]
@@ -60,6 +60,13 @@ def _probe_jianshi(text):
         len(chapters), "、".join("第%s章" % c for c in chapters[:3]) + ("…" if len(chapters) > 3 else ""), links)
 
 
+def _probe_ttd(text):
+    """DR-12 党史百年·天天读：栏目首页一次性列出全年日期页链接。"""
+    days = set(re.findall(r'href="(/GB/434461/4344\d\d/\d+/index\.html)"', text))
+    months = {d.split("/")[3] for d in days}
+    return "日期页链接 %d 条，覆盖月栏目 %d 个" % (len(days), len(months))
+
+
 def _probe_generic(text):
     links = len(re.findall(r'href="[^"]+"', text))
     return "页面链接 %d 条" % links
@@ -92,6 +99,10 @@ SOURCES = [
      "supply": "文献实体来源、语料补充",
      "urls": ["http://cpc.people.com.cn/GB/64162/64164/index.html"],
      "probe": _probe_generic},
+    {"id": "DR-12", "name": "中央党史和文献研究院「党史百年·天天读」",
+     "supply": "事件实体主来源（按日编年）、F9 语料主体、人物与文献佐证",
+     "urls": ["https://www.dswxyjy.org.cn/GB/434461/index.html"],
+     "probe": _probe_ttd},
 ]
 
 

@@ -3,7 +3,8 @@
 图谱质量验收核对（V3 5.3 / 开发规范 7.3）：python -m kg.importer.verify
 
 核对项：七标签 / 十关系计数、跨标签重名为 0、七个 Period 节点齐备且每时期 BELONGS_TO 反查非空、
-source 覆盖率、核心池（checked=1）规模、约束与索引存在性，并对照 V3 3.7 达标线给出结论。
+属性三元组总量、source 覆盖率、核心池（checked=1）规模、约束与索引存在性，
+并对照 V3 3.7 达标线逐项给出结论。
 """
 import os
 import sys
@@ -15,7 +16,10 @@ if _ROOT not in sys.path:
 from backend.common import ontology as O  # noqa: E402
 
 # V3 3.7 数据总验收达标线
-TARGETS = {"entities": 1500, "relations": 2500, "core_pool": 500, "source_coverage": 1.0}
+TARGETS = {"entities": 1500, "relations": 2500, "properties": 8000,
+           "core_pool": 500, "source_coverage": 1.0}
+# 属性三元组按「实体属性展开计」，不计系统字段（校验标记与写入时间）
+PROP_EXCLUDED = ["checked", "updated_at"]
 CORE_POOL = {"Person": 120, "Meeting": 60, "Event": 150, "Organization": 40,
              "Document": 60, "Location": 63, "Period": 7}
 
@@ -67,7 +71,15 @@ def main():
             c = int(rows[0]["c"]) if rows else 0
             print("  %-24s order=%d  反查事件 %5d %s" % (p["name"], p["order"], c, "" if c else "← 为空"))
 
-        print("=== 五、溯源与核心池 ===")
+        print("=== 五、属性三元组（实体属性展开计）===")
+        props = int(run_read(
+            "MATCH (n) UNWIND keys(n) AS k WITH k WHERE NOT k IN $skip RETURN count(*) AS c",
+            skip=PROP_EXCLUDED)[0]["c"])
+        print("  属性三元组 %d（达标线 ≥ %d，%s）；不计 %s"
+              % (props, TARGETS["properties"], _fmt(props >= TARGETS["properties"]),
+                 "/".join(PROP_EXCLUDED)))
+
+        print("=== 六、溯源与核心池 ===")
         with_source = int(run_read("MATCH (n) WHERE n.source IS NOT NULL AND n.source <> '' "
                                    "RETURN count(n) AS c")[0]["c"])
         coverage = with_source / total_nodes if total_nodes else 0
@@ -77,7 +89,7 @@ def main():
         print("  核心池 checked=1：%d（达标线 %d，%s）"
               % (checked, TARGETS["core_pool"], _fmt(checked >= TARGETS["core_pool"])))
 
-        print("=== 六、约束与索引 ===")
+        print("=== 七、约束与索引 ===")
         try:
             cons = run_read("SHOW CONSTRAINTS YIELD name RETURN count(*) AS c")[0]["c"]
             idx = run_read("SHOW INDEXES YIELD name RETURN count(*) AS c")[0]["c"]
@@ -85,7 +97,7 @@ def main():
         except Exception as exc:  # noqa: BLE001
             print("  查询失败：%s" % exc)
 
-        print("=== 七、F9 语料 ===")
+        print("=== 八、F9 语料 ===")
         from qa import fallback
         fallback.build()
         print("  paragraphs.csv 段落 %d（达标线 ≥ 2000，%s）" % (fallback.size(), _fmt(fallback.size() >= 2000)))

@@ -6,7 +6,8 @@ DR-10 F9 兜底语料库构建（V3 3.2 Step D / 规范 7.3）。
   1)《中国共产党简史》分章正文（DR-04，data/raw/jianshi/）—— 主体语料，章节出处清晰；
   2) 党史人物专页生平（DR-03，data/raw/person/）；
   3) 历次党代会专页（DR-02，data/raw/meeting/）；
-  4) 大事记编年条目（DR-01，data/clean/events_raw.csv）—— 补足全程史实覆盖，
+  4)「党史百年·天天读」日页正文（DR-12，data/raw/ttd/）—— 按日组织，覆盖面最广；
+  5) 大事记编年条目（DR-01，data/clean/events_raw.csv）—— 补足全程史实覆盖，
      章节标注为「一百年大事记·YYYY 年」。
 
 切分规则：按自然段切分，滤除 < 30 字的段落（V3 3.2 Step D）；去重后写入
@@ -141,6 +142,46 @@ def from_events(min_len):
     return rows
 
 
+# 天天读栏目每页固定的栏目说明，非史实正文
+TTD_INTRO = "中国共产党的历史波澜壮阔"
+TTD_FOOT = re.compile(r"^【党史百年")
+
+
+def from_ttd(min_len):
+    """
+    DR-12「党史百年·天天读」正文段落。
+
+    该栏目正文承载于**裸 `<div>`**（外层是 mCSB 滚动容器）而非 `<p>`，
+    故取不再嵌套 div 的叶子节点；栏目说明与编辑署名行按固定特征剔除。
+    """
+    raw_dir = os.path.join(_ROOT, "data", "raw", "ttd")
+    if not os.path.isdir(raw_dir):
+        return []
+    rows = []
+    for filename in sorted(os.listdir(raw_dir)):
+        if not filename.endswith(".html"):
+            continue
+        with open(os.path.join(raw_dir, filename), "r", encoding="utf-8") as f:
+            dom = soup(f.read())
+        for tag in dom(["script", "style"]):
+            tag.decompose()
+        day = clean_text(dom.title.get_text()).split("--")[0].strip() if dom.title else ""
+        if not day:
+            continue
+        for node in dom.find_all("div"):
+            if node.find("div"):
+                continue  # 只取叶子 div，避免父节点重复收录子节点正文
+            text = clean_text(node.get_text(" ", strip=True))
+            if len(text) < min_len or NOISE.search(text) or TTD_FOOT.match(text):
+                continue
+            if text.startswith(TTD_INTRO):
+                continue
+            rows.append({"text": text,
+                         "chapter": "《党史百年·天天读》· %s" % day,
+                         "source": "中共中央党史和文献研究院·党史百年·天天读"})
+    return rows
+
+
 def dedup(rows):
     """按正文去重，保留首次出现（简史正文优先于大事记补充）。"""
     seen, out = set(), []
@@ -162,9 +203,10 @@ def main():
     persons = from_pages("person", "党史人物", "人民网·党史人物纪念馆", args.min_len)
     meetings = from_pages("meeting", "历次党代会", "共产党员网·历次党代会专题",
                           args.min_len)
+    ttd = from_ttd(args.min_len)
     events = from_events(args.min_len)
-    # 顺序即优先级：同一段重复出现时保留先者（简史正文 > 人物 > 党代会 > 大事记）
-    rows = dedup(jianshi + persons + meetings + events)
+    # 顺序即优先级：同一段重复出现时保留先者（简史正文 > 人物 > 党代会 > 天天读 > 大事记）
+    rows = dedup(jianshi + persons + meetings + ttd + events)
     if not rows:
         print("未产出任何段落，请先执行 kg.crawler.jianshi_crawler 与 kg.extract.parse_events")
         return 1
@@ -175,6 +217,7 @@ def main():
     print("  《简史》分章正文  %5d 段" % len(jianshi))
     print("  党史人物专页      %5d 段" % len(persons))
     print("  历次党代会专页    %5d 段" % len(meetings))
+    print("  天天读日页正文    %5d 段" % len(ttd))
     print("  大事记条目补充    %5d 段" % len(events))
     print("  去重后合计        %5d 段（验收线 ≥ 2000，%s）"
           % (len(rows), "达标" if len(rows) >= 2000 else "未达标"))

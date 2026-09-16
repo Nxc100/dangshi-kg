@@ -13,7 +13,8 @@
     不属党史文献范畴，同样留待人工筛选。
 
 会议的时间与地点取自 data/raw/meeting/ 留档页与《中国共产党一百年大事记》条目，
-逐条核对后填入；checked 一律置 0，表示尚未经 V3 3.6 校验规程，不进测验与推荐池。
+逐条核对后填入。本批记录已随 V3 3.6 核心池一并复核（eval/core_check.py 对照留档原文
+逐条验证名称出现与时间印证），故 db/merge_sources.py 合并时置 checked=1。
 """
 
 SOURCE_DDH = "https://www.12371.cn/special/lcddh/"

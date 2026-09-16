@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Excel 七张表 → Neo4j 批量导入（V3 5.2 / 开发规范 7.3），幂等可重跑。
-用法（项目根目录）：python -m kg.importer.import_all [--excel data/excel] [--schema]
+用法（项目根目录）：python -m kg.importer.import_all [--excel data/excel] [--schema] [--prune]
 
 - 先执行 schema.cypher 建约束索引（--schema 或首次导入）；
 - 实体：MERGE (n:Label {name:$name}) SET n += $props，写入 checked 与 updated_at；
+  --prune 另删除 Excel 中已不存在的同标签节点，使图谱与 Excel 完全一致；
 - 关系：MATCH 头, 尾 MERGE，HELD_POSITION.position 等关系属性一并写入；
 - UNWIND 每 500 行一批提交；全部写操作参数化，标签 / 关系名只从 ontology 白名单取值。
 - 时间字段由 timeparse 派生 time_sort / time_precision；Event / Meeting 自动挂 BELONGS_TO 时期。
@@ -156,6 +157,22 @@ def assign_periods(session):
     return len(payload)
 
 
+def prune_entities(session, label, names):
+    """
+    删除该标签下 Excel 里已不存在的节点（连同其关系）。
+
+    MERGE 只增不减：抽取规则收紧后被淘汰的实体会留在库里变成孤儿，
+    使图谱计数与 data/excel 对不上。--prune 把两者重新对齐，
+    Period 不参与（它由本体定稿写入，不来自 Excel）。
+    """
+    rows = session.run("MATCH (n:%s) RETURN n.name AS name" % _L[label]).data()
+    stale = [r["name"] for r in rows if r["name"] not in names]
+    for batch in _batches(stale):
+        session.run("UNWIND $names AS name MATCH (n:%s {name: name}) DETACH DELETE n"
+                    % _L[label], names=batch)
+    return len(stale)
+
+
 def read_excel(path):
     import pandas as pd
 
@@ -170,6 +187,8 @@ def main():
     parser = argparse.ArgumentParser(description="Excel 七表 → Neo4j 批量导入（幂等）")
     parser.add_argument("--excel", default=EXCEL_DIR, help="Excel 目录，默认 data/excel")
     parser.add_argument("--schema", action="store_true", help="导入前执行 schema.cypher")
+    parser.add_argument("--prune", action="store_true",
+                        help="导入后删除 Excel 中已不存在的实体，使图谱与 Excel 完全一致")
     args = parser.parse_args()
 
     from backend.app import create_app
@@ -189,7 +208,12 @@ def main():
                 if rows is None:
                     print("%-14s 跳过（%s 不存在）" % (label, filename))
                     continue
-                print("%-14s 导入 %d 行" % (label, import_entities(session, label, rows)))
+                count = import_entities(session, label, rows)
+                note = ""
+                if args.prune:
+                    names = {str(r.get("name") or "").strip() for r in rows}
+                    note = "，清除已下线 %d 个" % prune_entities(session, label, names)
+                print("%-14s 导入 %d 行%s" % (label, count, note))
             rel_rows = read_excel(os.path.join(args.excel, RELATION_SHEET))
             if rel_rows is None:
                 print("关系表跳过（%s 不存在）" % RELATION_SHEET)

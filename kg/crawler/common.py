@@ -102,6 +102,8 @@ def fetch(url, subdir="", encoding=None, force=False):
 
     _sleep_gap()
     resp = requests.get(url, headers={"User-Agent": UA}, timeout=TIMEOUT)
+    # 站点对失效 ID 返回带正文的 404 页，若照单留档会被后续解析当成正文，故先判状态码
+    resp.raise_for_status()
     # 以页面声明的 charset 为准，域名规则兜底；调用方可用 encoding 参数强制指定
     html = resp.content.decode(encoding or detect_encoding(resp.content, url), "replace")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
