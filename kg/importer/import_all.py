@@ -101,9 +101,15 @@ def import_entities(session, label, rows):
     return len(payload)
 
 
+# 七个历史时期按《中国共产党简史》篇章划分定稿，见 backend/common/ontology.py
+PERIOD_SOURCE = "《中国共产党简史》（2021年版）篇章划分"
+
+
 def import_periods(session):
+    """七个时期节点由本体定稿写入，不经 Excel；source 记篇章划分依据以满足 100% 溯源。"""
     payload = [{"name": p["name"], "props": {"name": p["name"], "order": p["order"],
                                              "start_year": p["start_year"], "end_year": p["end_year"],
+                                             "source": PERIOD_SOURCE,
                                              "checked": 1, "updated_at": _now()}} for p in O.PERIODS]
     session.run("UNWIND $rows AS row MERGE (n:Period {name: row.name}) SET n += row.props", rows=payload)
     return len(payload)

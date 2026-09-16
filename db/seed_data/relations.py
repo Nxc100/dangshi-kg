@@ -29,6 +29,8 @@ RELATIONS = [
     ("八路军", "Organization", "LED", "百团大战", "Event", "", ""),
     ("中国共产党", "Organization", "LED", "改革开放", "Event", "", ""),
 
+    ("中国人民解放军", "Organization", "LED", "渡江战役", "Event", "", ""),
+
     # ---- PARTICIPATED_IN 参加：Person→Meeting ----
     ("毛泽东", "Person", "PARTICIPATED_IN", "中国共产党第一次全国代表大会", "Meeting", "", ""),
     ("董必武", "Person", "PARTICIPATED_IN", "中国共产党第一次全国代表大会", "Meeting", "", ""),
@@ -45,6 +47,8 @@ RELATIONS = [
     ("朱德", "Person", "PARTICIPATED_IN", "中国共产党第七次全国代表大会", "Meeting", "", ""),
     ("刘少奇", "Person", "PARTICIPATED_IN", "中国共产党第七次全国代表大会", "Meeting", "", ""),
     ("邓小平", "Person", "PARTICIPATED_IN", "中国共产党第十一届中央委员会第三次全体会议", "Meeting", "", ""),
+    ("毛泽东", "Person", "PARTICIPATED_IN", "中国共产党第七届中央委员会第二次全体会议", "Meeting", "", ""),
+    ("周恩来", "Person", "PARTICIPATED_IN", "中国共产党第七届中央委员会第二次全体会议", "Meeting", "", ""),
 
     # ---- AUTHORED 创作：Person→Document（每篇恰好一位作者）----
     ("毛泽东", "Person", "AUTHORED", "论持久战", "Document", "", ""),
@@ -73,6 +77,9 @@ RELATIONS = [
     ("中国共产党第七次全国代表大会", "Meeting", "HELD_IN", "延安", "Location", "", ""),
     ("中国共产党第十一届中央委员会第三次全体会议", "Meeting", "HELD_IN", "北京", "Location", "", ""),
     ("中国社会主义青年团第一次全国代表大会", "Meeting", "HELD_IN", "广州", "Location", "", ""),
+    ("中国共产党第七届中央委员会第二次全体会议", "Meeting", "HELD_IN", "西柏坡", "Location", "", ""),
+    ("中国共产党第十八次全国代表大会", "Meeting", "HELD_IN", "北京", "Location", "", ""),
+    ("中国共产党第二十次全国代表大会", "Meeting", "HELD_IN", "北京", "Location", "", ""),
 
     # ---- OCCURRED_IN 发生于：Event→Location ----
     ("五四运动", "Event", "OCCURRED_IN", "北京", "Location", "", ""),
