@@ -24,6 +24,7 @@ if _ROOT not in sys.path:
 
 from backend.common import ontology as O  # noqa: E402
 from db.seed_data import entities as E  # noqa: E402
+from db.seed_data import from_extraction as X  # noqa: E402
 from db.seed_data.relations import RELATIONS  # noqa: E402
 from kg.extract import timeparse  # noqa: E402
 from qa.dictionary import split_alias  # noqa: E402
@@ -40,8 +41,34 @@ TIME_FIELD = {"Event": "time_text", "Meeting": "time_text",
               "Organization": "found_time_text", "Document": "pub_time_text"}
 
 
-def build_entity_rows(problems):
+def merge_extracted():
+    """
+    把 DR-11 抽取并经人工确认的记录并入种子数据（V3 3.4 第 2 步产物）。
+
+    会议拆成实体行与「召开于」关系行；checked 一律为 0，表示尚未经 3.6 校验规程。
+    返回 (按类型追加的实体记录, 追加的关系三元组)。
+    """
+    extra_ent = {"Meeting": [], "Location": [], "Organization": []}
+    extra_rel = []
+    for name, alias, time_text, place, content, intro in X.CONGRESSES:
+        extra_ent["Meeting"].append({
+            "name": name, "alias": alias, "time_text": time_text, "content": content,
+            "intro": intro, "source": X.SOURCE_DDH, "checked": 0})
+        extra_rel.append((name, "Meeting", "HELD_IN", place, "Location", "", ""))
+    for name, alias, modern in X.EXTRA_LOCATIONS:
+        extra_ent["Location"].append({
+            "name": name, "alias": alias, "modern_name": modern,
+            "source": X.SOURCE_DDH, "checked": 0})
+    for name, alias, found_time, org_type, intro in X.EXTRA_ORGANIZATIONS:
+        extra_ent["Organization"].append({
+            "name": name, "alias": alias, "found_time_text": found_time,
+            "org_type": org_type, "intro": intro, "source": X.SOURCE_DDH, "checked": 0})
+    return extra_ent, extra_rel
+
+
+def build_entity_rows(problems, extra_ent=None):
     """把 seed_data 的元组记录展开为带 source 的字典行，并逐条校验。"""
+    extra_ent = extra_ent or {}
     rows_by_label, name_owner = {}, {}
     for label, (fields, records, source) in E.SEED_ENTITIES.items():
         allowed = {p["name"] for p in O.props_of(label)} | {"checked"}
@@ -72,6 +99,20 @@ def build_entity_rows(problems):
             if field and row.get(field) and timeparse.parse(row[field])[0] is None:
                 problems.append("%s「%s」的 %s 无法解析：%s" % (label, name, field, row[field]))
             rows.append(row)
+        # 追加 DR-11 抽取确认的记录，走同一套校验
+        for row in extra_ent.get(label, []):
+            name = str(row.get("name") or "").strip()
+            for field in required:
+                if field != "source" and not str(row.get(field) or "").strip():
+                    problems.append("%s「%s」缺必填属性 %s（抽取来源）" % (label, name, field))
+            if name in name_owner:
+                problems.append("实体主名跨类型重复：%s（%s / %s）" % (name, name_owner[name], label))
+            else:
+                name_owner[name] = label
+            field = TIME_FIELD.get(label)
+            if field and row.get(field) and timeparse.parse(row[field])[0] is None:
+                problems.append("%s「%s」的 %s 无法解析：%s" % (label, name, field, row[field]))
+            rows.append(row)
         rows_by_label[label] = rows
     return rows_by_label, name_owner
 
@@ -93,10 +134,10 @@ def build_alias_rows(rows_by_label, problems):
     return alias_rows
 
 
-def build_relation_rows(name_owner, problems):
+def build_relation_rows(name_owner, problems, extra_rel=None):
     """校验并展开关系行；BELONGS_TO 由导入脚本按 time_sort 自动归属，不在此手填。"""
     rows, seen = [], set()
-    for record in RELATIONS:
+    for record in list(RELATIONS) + list(extra_rel or []):
         head, head_type, rel, tail, tail_type, position, time_text = record
         tag = "(%s)-[%s]->(%s)" % (head, rel, tail)
         if not O.is_relation(rel):
@@ -175,9 +216,10 @@ def main():
     args = parser.parse_args()
 
     problems = []
-    rows_by_label, name_owner = build_entity_rows(problems)
+    extra_ent, extra_rel = merge_extracted()
+    rows_by_label, name_owner = build_entity_rows(problems, extra_ent)
     alias_rows = build_alias_rows(rows_by_label, problems)
-    relation_rows = build_relation_rows(name_owner, problems)
+    relation_rows = build_relation_rows(name_owner, problems, extra_rel)
 
     if problems:
         print("校验未通过，共 %d 个问题，未产出任何文件：" % len(problems))

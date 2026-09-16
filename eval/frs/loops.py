@@ -58,11 +58,13 @@ def loop_avatar(c, h):
     url1 = (first.get("data") or {}).get("avatar_url")
     c.ok("资料接口即时反映新头像",
          (c.data("/user/profile", headers=h) or {}).get("avatar_url") == url1)
-    time.sleep(1.1)  # 头像 URL 以文件 mtime 作破缓存参数，跨秒才会变化
+    # 头像 URL 以文件 mtime（秒级）作破缓存参数，同秒内重传时间戳不变，故等到跨秒再传
+    time.sleep(1.2)
     second = c.post("/user/avatar", files={"file": ("b.png", io.BytesIO(png), "image/png")},
                     headers=h).json()
     url2 = (second.get("data") or {}).get("avatar_url")
-    c.ok("再次更换覆盖旧图（每用户恒一张）", second.get("code") == 0 and url2 != url1, str(url2))
+    c.ok("再次更换覆盖旧图（每用户恒一张）", second.get("code") == 0, str(url2))
+    c.ok("覆盖后破缓存时间戳更新", url2 != url1, "%s → %s" % (url1, url2))
 
 
 def loop_qa_learning(c, kg):
