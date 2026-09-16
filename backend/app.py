@@ -43,11 +43,17 @@ BLUEPRINTS = (
 )
 
 
+# 这些库在 DEBUG 级别会逐条打印协议握手与连接池细节，淹没应用日志，固定压到 INFO
+_NOISY_LOGGERS = ("neo4j", "neo4j.pool", "neo4j.io", "urllib3", "werkzeug")
+
+
 def _configure_logging(debug):
     logging.basicConfig(
         level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.INFO)
 
 
 def _register_blueprints(app):
