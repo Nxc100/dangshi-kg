@@ -1,0 +1,25 @@
+{
+  "name": "dangshi-kg-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "基于知识图谱的党史学习智能问答系统 - 前端（Vue 3 + Vite + Element Plus + ECharts）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.20.0",
+    "echarts": "^5.6.0",
+    "element-plus": "^2.14.5",
+    "pinia": "^4.0.3",
+    "vue": "^3.5.42",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.8",
+    "vite": "^8.2.2"
+  }
+}

@@ -1,0 +1,41 @@
+/* 全站 CSS 变量（开发规范 1.1）：前台庄重红 + 米白/浅灰底 + 金色强调；后台深色菜单；统一圆角 8px、卡片内边距 16px */
+:root {
+  /* 主色（庄重红） */
+  --color-primary: #C7000B;
+  --color-primary-light: #E8515A;
+  --color-primary-lighter: #FBE9EA;
+  --color-primary-dark: #9E0009;
+
+  /* 强调色（金色，仅作强调） */
+  --color-gold: #C9A227;
+
+  /* 底色与文字 */
+  --color-bg: #FAF7F2;          /* 米白 */
+  --color-bg-gray: #F3F4F6;     /* 浅灰 */
+  --color-card: #FFFFFF;
+  --color-text: #303133;
+  --color-text-secondary: #606266;
+  --color-text-light: #909399;
+  --color-border: #E4E7ED;
+
+  /* 状态色沿用 Element Plus */
+  --color-success: #67C23A;
+  --color-warning: #E6A23C;
+  --color-danger: #F56C6C;
+
+  /* 圆角 / 间距 */
+  --radius: 8px;
+  --card-padding: 16px;
+  --header-height: 60px;
+
+  /* 唯一断点常量（媒体查询中不能引用 CSS 变量，值为 992px，见 index.css） */
+  --bp-md: 992px;
+
+  /* 后台深色菜单 */
+  --admin-menu-bg: #1F2D3D;
+  --admin-menu-text: #BFCBD9;
+  --admin-menu-hover: #263445;
+  --admin-menu-active: #C7000B;
+  --admin-header-bg: #FFFFFF;
+  --admin-body-bg: #F0F2F5;
+}
