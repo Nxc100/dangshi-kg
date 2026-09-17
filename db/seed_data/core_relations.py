@@ -180,6 +180,7 @@ CORE_AUTHORED = [
 def all_relations():
     """展开为统一的七元组列表（含 core_relations_ext 的续表），供 db/merge_sources.py 合并。"""
     from db.seed_data import core_relations_ext as EXT
+    from db.seed_data import core_relations_person as PERSON
 
     rows = list(CORE_REORGANIZED)
     rows += [(p, "Person", "HELD_POSITION", o, "Organization", position, "")
@@ -193,4 +194,5 @@ def all_relations():
     rows += [(p, "Person", "AUTHORED", d, "Document", "", "")
              for p, d in CORE_AUTHORED]
     rows += EXT.all_relations()
+    rows += PERSON.all_relations()
     return rows
