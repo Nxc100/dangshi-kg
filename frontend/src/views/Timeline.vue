@@ -40,7 +40,7 @@
 
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Position } from '@element-plus/icons-vue'
 import TypeBadge from '@/components/common/TypeBadge.vue'
@@ -51,6 +51,7 @@ import { labelColor } from '@/utils/ontology'
 import { YEAR_ERROR, isValidYear } from '@/utils/validators'
 
 // 时间轴页（F3）：七个时期页签（按 order）+ time_sort 升序事件卡 + 年份定位
+const route = useRoute()
 const router = useRouter()
 const periods = ref([])
 const activePeriod = ref('')
@@ -119,7 +120,12 @@ function openEntity(name) {
   router.push({ name: 'entity', params: { name } })
 }
 
-onMounted(() => loadPeriod())
+// 支持 /timeline?period=xxx 深链（首页时期卡片、站内互链直达指定时期）；
+// 参数非法时回落为默认时期，不报错
+onMounted(() => {
+  const q = route.query.period
+  loadPeriod(typeof q === 'string' && q.trim() ? q.trim() : undefined)
+})
 </script>
 
 <style scoped>

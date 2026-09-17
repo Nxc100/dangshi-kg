@@ -8,8 +8,8 @@ __pycache__/
 # 数据与数据库（不入 Git）
 data/raw/*
 !data/raw/.gitkeep
-*.db
-*.db-journal
+# *.db
+# *.db-journal
 
 # 后端私密配置与上传文件
 backend/.env
@@ -37,3 +37,7 @@ qa/resources/userdict.txt
 Thumbs.db
 *.log
 .playwright-mcp
+
+# 模型厂商配置（含 API Key，绝不入 Git；厂商预设见 backend/common/llm_providers.py）
+doc/模型配置/
+*models.json

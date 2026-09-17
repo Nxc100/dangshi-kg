@@ -39,7 +39,7 @@
       <router-view />
     </main>
 
-    <footer class="main-footer">全部知识来自权威公开出版物与官方网站 · 答案可溯源、零编造 · 仅供学习参考</footer>
+    <SiteFooter />
   </div>
 </template>
 
@@ -48,6 +48,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import SiteFooter from '@/components/common/SiteFooter.vue'
 import logo from '@/assets/logo.svg'
 import defaultAvatar from '@/assets/default_avatar.svg'
 
@@ -76,18 +77,23 @@ function onCommand(cmd) {
 
 <style scoped>
 .main-layout {
-  min-height: 100%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
+/* 吸顶导航：正规站点的基本盘——长页面（时间轴、问答流）滚动时导航始终可达 */
 .main-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   height: var(--header-height);
-  background: var(--color-card);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 2px solid var(--color-primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 .header-inner {
-  max-width: 1200px;
+  max-width: var(--page-max);
   height: 100%;
   margin: 0 auto;
   padding: 0 20px;
@@ -132,13 +138,10 @@ function onCommand(cmd) {
 }
 .main-body {
   flex: 1;
+  min-width: 0; /* 防止长实体名（整句事件名）把 flex 容器撑出横向滚动条 */
 }
-.main-footer {
-  padding: 16px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--color-text-light);
-  border-top: 1px solid var(--color-border);
+.nav-menu :deep(.el-menu-item) {
+  font-size: 15px;
 }
 @media (max-width: 992px) {
   .brand-name {

@@ -66,6 +66,47 @@ import { useUserStore } from '@/store/user'
 const route = useRoute()
 const userStore = useUserStore()
 
+// 游客点"保存成绩"会跳去登录，本页随之卸载。此处把整卷与作答暂存在 sessionStorage，
+// 登录回跳后恢复成绩页，满足"成绩暂存前端不丢失"（规范 1.2 关键拦截反馈）。
+// 只在触发登录引导时写入：未点保存的试做刷新后仍然丢失，与 FRS 9.2 的预期一致。
+const PENDING_KEY = 'dangshi_quiz_pending'
+
+function stashPending() {
+  try {
+    sessionStorage.setItem(
+      PENDING_KEY,
+      JSON.stringify({
+        questions: questions.value,
+        answers: answers.value,
+        duration_sec: durationSec.value,
+      }),
+    )
+  } catch {
+    // 隐私模式等场景下 sessionStorage 不可用，退化为不暂存，不影响其余流程
+  }
+}
+
+function clearPending() {
+  try {
+    sessionStorage.removeItem(PENDING_KEY)
+  } catch {
+    /* 同上，忽略 */
+  }
+}
+
+// 取出并立即清除，保证只恢复一次
+function takePending() {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY)
+    sessionStorage.removeItem(PENDING_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    return data && Array.isArray(data.questions) && data.questions.length ? data : null
+  } catch {
+    return null
+  }
+}
+
 const stage = ref('setup') // setup | doing | score
 const count = ref(5)
 const questions = ref([])
@@ -123,7 +164,8 @@ function finish() {
 
 async function save() {
   if (!userStore.isLogin) {
-    loginGuide.value = true // 成绩暂存前端，登录回跳后不丢失
+    stashPending() // 成绩暂存前端，登录回跳后不丢失
+    loginGuide.value = true
     return
   }
   saving.value = true
@@ -148,10 +190,27 @@ function restart() {
   questions.value = []
   answers.value = {}
   saved.value = false
+  clearPending()
+}
+
+// 恢复登录前暂存的成绩，直接回到成绩页，用户接着点"保存成绩"即可
+function resumePending(data) {
+  questions.value = data.questions
+  answers.value = data.answers || {}
+  durationSec.value = data.duration_sec || 0
+  saved.value = false
+  stage.value = 'score'
 }
 
 onMounted(() => {
-  if (route.query.entities) start()
+  // "针对错题再练"是明确的新一卷，优先级高于恢复暂存
+  if (route.query.entities) {
+    clearPending()
+    start()
+    return
+  }
+  const pending = takePending()
+  if (pending) resumePending(pending)
 })
 </script>
 

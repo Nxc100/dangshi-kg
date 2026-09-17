@@ -22,7 +22,12 @@
       </el-form-item>
 
       <el-form-item label="关系类型" required :error="errors.rel">
-        <el-select v-model="form.rel" :disabled="!form.head_type" placeholder="请先选择头实体" @change="onRelChange">
+        <el-select
+          v-model="form.rel"
+          :disabled="!form.head_type"
+          :placeholder="form.head_type ? '请选择关系类型' : '请先选择头实体'"
+          @change="onRelChange"
+        >
           <el-option v-for="r in relOptions" :key="r" :label="`${relationZh(r)}（${r}）`" :value="r" />
         </el-select>
       </el-form-item>
@@ -32,7 +37,7 @@
           v-model="form.tail"
           :fetch-suggestions="searchTail"
           :disabled="!form.rel"
-          placeholder="请先选择关系类型"
+          :placeholder="form.rel ? '输入实体名，需从下拉中选中已有实体' : '请先选择关系类型'"
           clearable
           class="full"
           @select="onTailSelect"

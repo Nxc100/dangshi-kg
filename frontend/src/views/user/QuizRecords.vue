@@ -38,9 +38,10 @@
           <div v-for="(q, i) in questions" :key="i" class="detail-item" :class="{ wrong: !q.correct }">
             <p class="detail-question">{{ i + 1 }}. {{ q.question }}</p>
             <p class="detail-answer">
-              你的作答：<strong>{{ q.chosen || '未作答' }}</strong>
-              <span v-if="!q.correct" class="right-key">正确答案：{{ q.answer_key }}</span>
+              你的作答：<strong>{{ q.chosen ? optionLabel(q, q.chosen) : '未作答' }}</strong>
+              <span v-if="!q.correct" class="right-key">正确答案：{{ optionLabel(q, q.answer_key) }}</span>
             </p>
+            <p v-if="q.explanation" class="detail-explain">{{ q.explanation }}</p>
             <router-link v-if="q.entity" class="detail-link"
               :to="{ name: 'entity', params: { name: q.entity.name } }">
               去百科页复习「{{ q.entity.name }}」
@@ -81,6 +82,12 @@ const questions = computed(() => (detail.value && detail.value.detail && detail.
 const wrongEntities = computed(() =>
   questions.value.filter((q) => !q.correct && q.entity).map((q) => q.entity.name),
 )
+
+// 逐题回顾只显示选项字母无法判读作答内容，这里补上选项原文（detail_json 已存 options）
+function optionLabel(question, key) {
+  const hit = (question.options || []).find((o) => o.key === key)
+  return hit ? `${key}. ${hit.text}` : key
+}
 
 async function load() {
   loading.value = true
@@ -163,6 +170,12 @@ onMounted(load)
 .right-key {
   margin-left: 10px;
   color: var(--color-success);
+}
+.detail-explain {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
 }
 .detail-link {
   font-size: 13px;

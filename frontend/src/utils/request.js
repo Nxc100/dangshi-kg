@@ -21,6 +21,29 @@ function buildError(code, msg, data) {
   return { code, msg, data: data || null, errors: (data && data.errors) || null }
 }
 
+// 传输层重试：本机回环连接偶发建连超时（connect ETIMEDOUT），经 Vite 代理后表现为 502 /
+// 无响应，与接口本身无关（定位过程见开发规范「修复记录 · 2026-09-17」）。
+// 仅对幂等的 GET 重试，且只认传输层失败——业务错误（401/403/404/422）一律不重试。
+const RETRY_MAX = 2
+const RETRY_DELAY = 400
+const RETRIABLE_STATUS = [502, 503, 504]
+
+function isRetriable(error) {
+  const cfg = error.config
+  if (!cfg || String(cfg.method).toLowerCase() !== 'get') return false
+  if (cfg.__retryCount >= RETRY_MAX) return false
+  // 无响应 = 连接被拒 / 超时 / 中断；有响应则只认网关类状态码
+  return !error.response || RETRIABLE_STATUS.includes(error.response.status)
+}
+
+function retry(error) {
+  const cfg = error.config
+  cfg.__retryCount = (cfg.__retryCount || 0) + 1
+  return new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * cfg.__retryCount)).then(() =>
+    service(cfg),
+  )
+}
+
 function handle401() {
   const userStore = useUserStore()
   userStore.logout()
@@ -42,6 +65,9 @@ service.interceptors.response.use(
     return Promise.reject(buildError(code, (body && body.msg) || '请求失败', body && body.data))
   },
   (error) => {
+    // 先尝试幂等重试，避免把一次环境抖动直接抛成页面错误态
+    if (isRetriable(error)) return retry(error)
+
     const resp = error.response
     if (!resp) {
       ElMessage.error('服务暂时不可用，请稍后重试')

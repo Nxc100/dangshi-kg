@@ -47,6 +47,7 @@
           :links="filtered.links"
           :center-id="centerId"
           height="560px"
+          show-isolated-hint
           @node-click="onNodeClick"
           @node-dblclick="openEntity"
         />
@@ -66,8 +67,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import KgGraph from '@/components/graph/KgGraph.vue'
@@ -83,6 +84,7 @@ import { KEYWORD_MAX_LEN, isValidKeyword } from '@/utils/validators'
 // 图谱页（F2）：搜索联想 → 2 跳力导向子图 → 单击抽屉 / 展开邻居 → 双击进百科；单画布节点上限 100
 const NODE_LIMIT = 100
 
+const route = useRoute()
 const router = useRouter()
 const keyword = ref('')
 const graph = ref({ nodes: [], links: [] })
@@ -188,6 +190,7 @@ async function expandNeighbors(node) {
   try {
     const data = await getNeighbors(node.name)
     const nodeMap = new Map(graph.value.nodes.map((n) => [n.id, n]))
+    const beforeCount = nodeMap.size
     let reached = false
     ;(data.nodes || []).forEach((n) => {
       if (nodeMap.has(n.id)) return
@@ -210,6 +213,9 @@ async function expandNeighbors(node) {
     if (reached) {
       truncated.value = true
       ElMessage.warning('画布节点已达上限 100，请使用类型筛选')
+    } else if (nodeMap.size === beforeCount) {
+      // 孤立节点或邻居已全部在画布上，必须给出反馈，避免点击后无任何变化（规范 1.2）
+      ElMessage.info(`「${node.name}」暂无可展开的关联知识`)
     }
   } catch (err) {
     ElMessage.error((err && err.msg) || '展开邻居失败')
@@ -227,6 +233,12 @@ function openEntity(node) {
   drawerVisible.value = false
   router.push({ name: 'entity', params: { name: node.name } })
 }
+
+// 支持 /graph?kw=xxx 深链（首页「在图谱中查看」、站内互链直接出图）
+onMounted(() => {
+  const kw = route.query.kw
+  if (typeof kw === 'string' && kw.trim()) quickSearch(kw.trim())
+})
 </script>
 
 <style scoped>

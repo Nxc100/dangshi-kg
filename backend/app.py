@@ -40,6 +40,7 @@ BLUEPRINTS = (
     "backend.api.admin.oplog_api",
     "backend.api.admin.user_admin_api",
     "backend.api.admin.qalog_api",
+    "backend.api.admin.llm_admin_api",
 )
 
 
@@ -66,11 +67,15 @@ def _register_blueprints(app):
 def _load_resources(app):
     """常驻对象：实体词典（含 jieba userdict）与 F9 兜底 TF-IDF 矩阵，各加载一次（规范 6.3 性能项）。"""
     from qa import dictionary, fallback
+    from backend.services import llm_admin_service
 
     with app.app_context():
         dict_stats = dictionary.load()
         fallback.build(app.config["CORPUS_PATH"])
-    return {"dictionary": dict_stats, "corpus_paragraphs": fallback.size()}
+        # 库中若已有 AI 增强配置则接管 .env（LLM-Design 4.2 落库化）；无配置时保持 .env 行为
+        llm_from_db = llm_admin_service.load_into_runtime()
+    return {"dictionary": dict_stats, "corpus_paragraphs": fallback.size(),
+            "llm_config_source": "db" if llm_from_db else "env"}
 
 
 def create_app(load_resources=True):

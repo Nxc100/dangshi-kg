@@ -25,8 +25,22 @@
 
   /* 圆角 / 间距 */
   --radius: 8px;
+  --radius-lg: 12px;
   --card-padding: 16px;
   --header-height: 60px;
+  --page-max: 1200px;
+
+  /* 阴影层级（卡片静置 / 悬浮 / 浮层），统一观感、避免各页面自写 rgba */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(31, 45, 61, 0.12);
+
+  /* 庄重红渐变（首页主视觉 / 登录页品牌区，仅用于大色块，不用于正文） */
+  --gradient-primary: linear-gradient(135deg, #9E0009 0%, #C7000B 55%, #D8323B 100%);
+  --gradient-mask: linear-gradient(180deg, rgba(31, 12, 12, 0.10) 0%, rgba(31, 12, 12, 0.55) 100%);
+
+  /* 统一过渡时长 */
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* 唯一断点常量（媒体查询中不能引用 CSS 变量，值为 992px，见 index.css） */
   --bp-md: 992px;

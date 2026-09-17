@@ -13,6 +13,7 @@
         <el-menu-item index="/admin/users"><el-icon><User /></el-icon><template #title>用户管理</template></el-menu-item>
         <el-menu-item index="/admin/qalog"><el-icon><ChatLineSquare /></el-icon><template #title>问答日志</template></el-menu-item>
         <el-menu-item index="/admin/stats"><el-icon><TrendCharts /></el-icon><template #title>热点统计</template></el-menu-item>
+        <el-menu-item index="/admin/llm"><el-icon><MagicStick /></el-icon><template #title>AI 增强</template></el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -62,10 +63,15 @@ function logout() {
   min-height: 100vh;
   background: var(--admin-body-bg);
 }
+/* 侧边菜单固定：后台表格页普遍很长，菜单跟着滚走会让导航失效 */
 .admin-aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   background: var(--admin-menu-bg);
   transition: width 0.2s;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 .admin-brand {
   height: var(--header-height);
@@ -89,12 +95,15 @@ function logout() {
   background: var(--admin-menu-active);
 }
 .admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 900;
   height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--admin-header-bg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 .admin-header-right {
   display: flex;

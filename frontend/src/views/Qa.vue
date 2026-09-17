@@ -240,16 +240,35 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
 }
+/* 消息区内部滚动（聊天页惯例）。高度扣掉吸顶导航与输入区，
+   并设上下限，避免在超宽屏拉得过长、在矮屏挤得过短 */
 .qa-list {
-  height: calc(100vh - 320px);
-  min-height: 320px;
+  height: calc(100vh - var(--header-height) - 240px);
+  min-height: 360px;
+  max-height: 680px;
   overflow-y: auto;
+  background: linear-gradient(180deg, #fff 0%, #fcfbfa 100%);
+  scroll-behavior: smooth;
+}
+/* 细滚动条，减少聊天区的视觉噪音 */
+.qa-list::-webkit-scrollbar {
+  width: 8px;
+}
+.qa-list::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 999px;
+}
+.qa-list::-webkit-scrollbar-thumb:hover {
+  background: #c0c4cc;
 }
 .qa-welcome {
-  padding: 20px 4px;
+  padding: 28px 4px 20px;
+  text-align: center;
 }
 .welcome-text {
-  margin: 0 0 12px;
+  margin: 0 auto 16px;
+  max-width: 560px;
+  line-height: 1.9;
   color: var(--color-text-secondary);
 }
 .clarify-text {
@@ -259,8 +278,13 @@ onMounted(async () => {
 .llm-actions {
   margin-top: 4px;
 }
+/* 元素已带 .card（内边距、背景、阴影由通用类提供），这里只补聚焦态强调 */
 .qa-input {
   margin-top: 12px;
+  transition: box-shadow var(--transition);
+}
+.qa-input:focus-within {
+  box-shadow: 0 0 0 3px var(--color-primary-lighter), var(--shadow-sm);
 }
 .input-actions {
   display: flex;

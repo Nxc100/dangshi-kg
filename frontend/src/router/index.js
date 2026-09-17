@@ -46,6 +46,7 @@ const routes = [
       { path: 'users', name: 'adminUsers', component: () => import('@/views/admin/UserManage.vue'), meta: { title: '用户管理' } },
       { path: 'qalog', name: 'adminQaLog', component: () => import('@/views/admin/QaLog.vue'), meta: { title: '问答日志' } },
       { path: 'stats', name: 'adminStats', component: () => import('@/views/admin/Stats.vue'), meta: { title: '热点统计' } },
+      { path: 'llm', name: 'adminLlm', component: () => import('@/views/admin/LlmConfig.vue'), meta: { title: 'AI 增强' } },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },

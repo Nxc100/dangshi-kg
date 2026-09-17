@@ -16,7 +16,7 @@
             {{ item.question }}
             <el-tag v-if="item.fallback" size="small" type="warning" effect="plain">兜底</el-tag>
           </p>
-          <p class="item-answer">{{ summary(item.answer) }}</p>
+          <p class="item-answer">{{ item.answer_brief || '（无答案文本）' }}</p>
           <span class="item-time">{{ item.created_at }}</span>
         </div>
         <div class="item-actions">
@@ -55,11 +55,6 @@ const size = ref(10)
 const total = ref(0)
 const loading = ref(false)
 const error = ref('')
-
-function summary(text) {
-  const s = String(text || '')
-  return s.length > 40 ? `${s.slice(0, 40)}…` : s || '（无答案文本）'
-}
 
 async function load() {
   loading.value = true

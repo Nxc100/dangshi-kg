@@ -8,9 +8,13 @@
   ③ 引用校验：末尾至少含一个 [n]，n ∈ 1–3 且对应段落存在。
 固定拒答句免于 ①② 直接放行。
 """
+import logging
 import re
 
 from llm.prompts import REFUSAL
+
+log = logging.getLogger(__name__)
+_entity_check_warned = False
 
 _YEAR = re.compile(r"\d{3,4}\s*年")
 _MONTH_DAY = re.compile(r"\d{1,2}\s*[月日]")
@@ -62,7 +66,13 @@ def check(text, passages):
                 main = hit[0] if hit else term
                 if main not in corpus:
                     return False, "entity:%s" % term, cited
-    except Exception:  # noqa: BLE001 —— 词典不可用时不阻断（①③ 仍然生效）
-        pass
+    except Exception as exc:  # noqa: BLE001 —— 词典不可用时不阻断（①③ 仍然生效）
+        # 实体校验是合规闸门的一项，退化时必须留痕：只在进程内首次发生时告警一次，
+        # 避免每请求刷屏，同时让运维能发现「校验强度已降级」而不是无声失效
+        global _entity_check_warned
+        if not _entity_check_warned:
+            _entity_check_warned = True
+            log.warning("实体词典不可用（%s），忠实度校验的实体项已跳过，年份与引用校验仍生效",
+                        exc.__class__.__name__)
 
     return True, None, valid
