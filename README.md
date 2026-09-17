@@ -1,7 +1,8 @@
 # 基于知识图谱的党史学习智能问答系统
 
 限定领域模板式 KBQA：Neo4j 知识图谱 + jieba 规则问答管道 + Flask 接口 + Vue 3 前端。
-需求与规范以 `doc/` 下四份文档为唯一来源（FRS V1.1 / 实施方案 V3 / LLM 接入方案 / 开发规范）。
+需求与规范以 `doc/` 下四份文档为唯一来源（FRS V1.1 / 实施方案 V3 / LLM 接入方案 / 开发规范）；
+`doc/Neo4j-Desktop-2-使用指南.md` 是操作手册，只讲怎么用，不参与需求与规范的定义。
 
 ## 目录
 
@@ -37,6 +38,7 @@ copy backend\.env.example backend\.env
 #      ADMIN_INIT_PASSWORD=<初始管理员口令，留空则建库时生成随机密码并打印一次>
 
 # 3. 启动 Neo4j Desktop 的本地 DBMS，确认 bolt://127.0.0.1:7687 已监听
+#    没用过 Desktop 2 看 doc/Neo4j-Desktop-2-使用指南.md（启停、查图谱、看日志、排错）
 
 # 4. 一键初始化：建 SQLite → 建约束索引 → 导入图谱 → 数据验收核对
 python -m db.init_all
